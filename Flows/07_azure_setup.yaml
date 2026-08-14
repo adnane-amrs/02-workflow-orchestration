@@ -1,0 +1,22 @@
+id: 07_AZURE_setup
+namespace: zoomcamp
+
+tasks:
+  - id: create_azure_infrastructure
+    type: io.kestra.plugin.azure.cli.AzCLI
+    env:
+      AZURE_CLIENT_ID: "{{ secret('AZURE_CLIENT_ID') }}"
+      AZURE_CLIENT_SECRET: "{{ secret('AZURE_CLIENT_SECRET') }}"
+      AZURE_TENANT_ID: "{{ secret('AZURE_TENANT_ID') }}"
+    commands:
+      # 1. Log in using the Service Principal credentials from env
+      - az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+
+      # 2. Create Resource Group
+      - az group create --name "{{ kv('AZURE_RESOURCE_GROUP') }}" --location "{{ kv('AZURE_LOCATION') }}"
+
+      # 3. Create Storage Account
+      - az storage account create --name "{{ kv('AZURE_STORAGE_ACCOUNT') }}" --resource-group "{{ kv('AZURE_RESOURCE_GROUP') }}" --location "{{ kv('AZURE_LOCATION') }}" --sku Standard_LRS
+
+      # 4. Create Storage Container
+      - az storage container create --name "{{ kv('AZURE_CONTAINER_NAME') }}" --account-name "{{ kv('AZURE_STORAGE_ACCOUNT') }}"

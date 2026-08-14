@@ -1,0 +1,45 @@
+id: 06_azure_kv
+namespace: zoomcamp
+
+tasks:
+  - id: azure_resource_group
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_RESOURCE_GROUP
+    kvType: STRING
+    value: kestra-sandbox # Valid Azure Resource Group name
+
+  - id: azure_location
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_LOCATION
+    kvType: STRING
+    value: francecentral
+
+  - id: azure_storage_account
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_STORAGE_ACCOUNT
+    kvType: STRING
+    value: stkestradata01 # NO hyphens, lowercase letters/numbers only!
+
+  - id: azure_container_name
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_CONTAINER_NAME
+    kvType: STRING
+    value: kestra-data
+
+  - id: azure_tenant_id
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_TENANT_ID
+    kvType: STRING
+    value: "{{ secret('AZURE_TENANT_ID') }}" # From Microsoft Entra ID Overview
+
+  - id: azure_client_id
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_CLIENT_ID
+    kvType: STRING
+    value: "{{ secret('AZURE_CLIENT_ID') }}" # From App registrations Overview
+
+  - id: azure_client_secret
+    type: io.kestra.plugin.core.kv.Set
+    key: AZURE_CLIENT_SECRET
+    kvType: STRING
+    value: "{{ secret('AZURE_CLIENT_SECRET') }}" # The Value copied from Certificates & secrets
