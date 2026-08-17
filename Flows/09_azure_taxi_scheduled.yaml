@@ -1,0 +1,64 @@
+id: 09_azure_taxi_scheduled
+namespace: zoomcamp
+description: |
+  Best to add a label `backfill:true` from the UI to track executions created via a backfill.
+  CSV data used here comes from: https://github.com/DataTalksClub/nyc-tlc-data/releases
+
+inputs:
+  - id: taxi
+    type: SELECT
+    displayName: Select taxi type
+    values: [yellow, green]
+    defaults: green
+
+variables:
+  file: "{{inputs.taxi}}_tripdata_{{trigger.date | date('yyyy-MM')}}.csv"
+  data: "{{outputs.extract.outputFiles[inputs.taxi ~ '_tripdata_' ~ (trigger.date | date('yyyy-MM')) ~ '.csv']}}"
+
+tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      file: "{{render(vars.file)}}"
+      taxi: "{{inputs.taxi}}"
+
+  - id: extract
+    type: io.kestra.plugin.scripts.shell.Commands
+    outputFiles:
+      - "*.csv"
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - curl -sL https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{{inputs.taxi}}/{{render(vars.file)}}.gz | gzip -d > {{render(vars.file)}}
+
+  - id: upload_to_azure
+    type: io.kestra.plugin.azure.storage.blob.Upload
+    endpoint: "https://{{kv('AZURE_STORAGE_ACCOUNT')}}.blob.core.windows.net"
+    container: "{{kv('AZURE_CONTAINER_NAME')}}"
+    from: "{{render(vars.data)}}"
+    name: "{{render(vars.file)}}"
+
+  - id: purge_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+    description: To avoid cluttering your storage, we will remove the downloaded files
+    disabled: false
+
+pluginDefaults:
+  - type: io.kestra.plugin.azure
+    values:
+      tenantId: "{{secret('AZURE_TENANT_ID')}}"
+      clientId: "{{secret('AZURE_CLIENT_ID')}}"
+      clientSecret: "{{secret('AZURE_CLIENT_SECRET')}}"
+
+triggers:
+  - id: green_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 1 * *"
+    inputs:
+      taxi: green
+
+  - id: yellow_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 10 1 * *"
+    inputs:
+      taxi: yellow
